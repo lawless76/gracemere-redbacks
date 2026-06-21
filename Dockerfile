@@ -1,23 +1,9 @@
-# ── Stage 1: Build the Astro site ────────────────────────────
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-# Install dependencies first (cached layer)
-COPY package*.json ./
-RUN npm ci
-
-# Copy source and build
-COPY . .
-RUN npm run build
-
-# ── Stage 2: Serve with Nginx ─────────────────────────────────
+# GitHub Actions runs `npm install` and `npm run build` before
+# building this image, so dist/ is already in the build context.
+# Docker just needs to copy it into Nginx — no Node required here.
 FROM nginx:alpine
 
-# Copy built files
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Copy our custom Nginx config
+COPY dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
