@@ -109,7 +109,7 @@ p:last-child { margin-bottom: 0; }
   max-width: var(--max-width); margin: 0 auto;
 }
 .site-logo { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
-.site-logo img { height: 60px; width: auto; }
+.site-logo img { height: 120px; width: auto; }
 .logo-placeholder {
   width: 50px; height: 50px;
   background: var(--color-primary); border-radius: 50%;
