@@ -1,0 +1,18 @@
+# Environment / secrets — never commit these
+.env
+
+# Astro build output
+dist/
+.astro/
+
+# Node
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp

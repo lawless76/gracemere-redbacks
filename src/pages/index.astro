@@ -1,0 +1,122 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+// Fetch latest 3 non-draft news posts
+const allNews = await getCollection('news', ({ data }) => !data.draft);
+const latestNews = allNews
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  .slice(0, 3);
+
+const formatDate = (d: Date) =>
+  d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+---
+<BaseLayout title="Home" description="Gracemere Redbacks Soccer Club — community soccer for all ages in Gracemere, QLD.">
+
+  <!-- ── Hero ─────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-content">
+      <span class="hero-badge">Gracemere, QLD</span>
+      <h1>Welcome to the <span>Gracemere Redbacks</span></h1>
+      <p>A proud community soccer club open to all ages and skill levels. Join us on and off the pitch!</p>
+      <div class="hero-buttons">
+        <a href="/programs" class="btn btn-primary">Register Now</a>
+        <a href="/about"    class="btn btn-outline">Learn More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Feature Cards ──────────────────────────────────────── -->
+  <section class="section section--gray">
+    <div class="container">
+      <div class="section-heading text-center">
+        <h2>Why Join the Redbacks?</h2>
+      </div>
+      <div class="feature-cards">
+        <div class="feature-card">
+          <div class="feature-card-icon">⚽</div>
+          <h3>All Ages Welcome</h3>
+          <p>From juniors to seniors, we have programs and teams for every age group and experience level.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-icon">🏆</div>
+          <h3>Competitive & Social</h3>
+          <p>Whether you're chasing a premiership or just looking to enjoy a run, there's a spot for you here.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-icon">🤝</div>
+          <h3>Community First</h3>
+          <p>We're more than a club — we're a community. Family-friendly events, BBQs, and a warm welcome for everyone.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-icon">📅</div>
+          <h3>Year-Round Activity</h3>
+          <p>Pre-season training, winter comp, school holiday clinics, and more — there's always something on.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── About Strip ────────────────────────────────────────── -->
+  <section class="section section--dark">
+    <div class="container">
+      <div class="about-strip">
+        <div class="about-strip-placeholder" aria-hidden="true">🏟️</div>
+        <div class="about-strip-text">
+          <div class="section-heading">
+            <h2>About Our Club</h2>
+          </div>
+          <p>The Gracemere Redbacks have been a fixture of the Gracemere community for years. We're committed to growing the game at the grassroots level and giving every player the chance to develop their skills in a fun, safe, and inclusive environment.</p>
+          <p>We train and play at our home ground in Gracemere and compete in local and regional competitions throughout the year.</p>
+          <a href="/about" class="btn btn-outline">Read Our Story</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Latest News ────────────────────────────────────────── -->
+  {latestNews.length > 0 && (
+    <section class="section">
+      <div class="container">
+        <div class="section-heading" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem;margin-bottom:2.5rem">
+          <h2>Latest News</h2>
+          <a href="/news" class="btn btn-outline-dark">All News →</a>
+        </div>
+        <div class="post-grid">
+          {latestNews.map(post => (
+            <article class="post-card">
+              <div class="post-card-thumb">
+                {post.data.image
+                  ? <img src={post.data.image} alt={post.data.title} loading="lazy" />
+                  : <div class="post-card-thumb-placeholder">⚽</div>
+                }
+              </div>
+              <div class="post-card-body">
+                <p class="post-card-meta">
+                  <span class="category-tag">{post.data.category}</span>
+                  {formatDate(post.data.date)}
+                </p>
+                <h3><a href={`/news/${post.slug}`}>{post.data.title}</a></h3>
+                {post.data.excerpt && <p>{post.data.excerpt}</p>}
+                <a href={`/news/${post.slug}`} class="btn btn-outline-dark" style="align-self:flex-start;font-size:0.85rem;padding:0.5rem 1rem">Read More</a>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- ── CTA Banner ─────────────────────────────────────────── -->
+  <section class="cta-banner">
+    <div class="container">
+      <h2>Ready to Join the Redbacks?</h2>
+      <p>Registrations are open. Get in touch or head straight to our programs page.</p>
+      <div class="hero-buttons" style="justify-content:center">
+        <a href="/programs" class="btn btn-outline">View Programs</a>
+        <a href="/contact"  class="btn btn-outline">Contact Us</a>
+      </div>
+    </div>
+  </section>
+
+</BaseLayout>

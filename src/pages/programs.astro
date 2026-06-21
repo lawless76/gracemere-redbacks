@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getEntry } from 'astro:content';
+
+// Content is managed via Decap CMS → src/content/pages/programs.md
+const entry = await getEntry('pages', 'programs');
+const { Content } = await entry!.render();
+---
+<BaseLayout title="Programs" description="Soccer programs at Gracemere Redbacks — junior development, senior teams, school holiday clinics and more.">
+
+  <section class="page-hero">
+    <div class="container">
+      <h1>Our Programs</h1>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a> <span>/</span> <span>Programs</span>
+      </nav>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container" style="max-width:820px">
+      <div class="prose">
+        <Content />
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-banner">
+    <div class="container">
+      <h2>Ready to Register?</h2>
+      <p>Contact us today and we'll get you or your child signed up.</p>
+      <a href="/contact" class="btn btn-outline">Get in Touch</a>
+    </div>
+  </section>
+
+</BaseLayout>

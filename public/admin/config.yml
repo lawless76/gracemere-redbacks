@@ -1,0 +1,79 @@
+# ============================================================
+# Decap CMS Configuration — Gracemere Redbacks
+# ============================================================
+#
+# HOW AUTHENTICATION WORKS:
+# Editors log in with their GitHub account. When they save a
+# post or page, Decap commits the changes directly to the repo.
+# GitHub Actions then rebuilds and deploys the site automatically.
+#
+# ONE-TIME SETUP REQUIRED (see README.md for full walkthrough):
+# 1. Create a GitHub OAuth App at https://github.com/settings/developers
+#    - Homepage URL:  http://10.0.1.252:5000
+#    - Callback URL:  http://10.0.1.252:5000/admin/
+# 2. Replace YOUR_GITHUB_OAUTH_APP_CLIENT_ID below with the Client ID
+# ============================================================
+
+backend:
+  name: github
+  repo: lawless76/gracemere-redbacks   # your GitHub repo
+  branch: main
+  auth_type: pkce
+  app_id: YOUR_GITHUB_OAUTH_APP_CLIENT_ID   # ← REPLACE THIS
+
+# Where uploaded images are stored in the repo
+media_folder: "public/uploads"
+public_folder: "/uploads"
+
+# ── Collections ─────────────────────────────────────────────
+collections:
+
+  # News Posts — editors can create/edit/delete news articles
+  - name: "news"
+    label: "News Posts"
+    folder: "src/content/news"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    preview_path: "news/{{slug}}"
+    fields:
+      - { label: "Title",    name: "title",    widget: "string" }
+      - label: "Date"
+        name: "date"
+        widget: "datetime"
+        format: "YYYY-MM-DD"
+        date_format: "DD/MM/YYYY"
+        time_format: false
+        default: ""
+      - label: "Category"
+        name: "category"
+        widget: "select"
+        default: "Club News"
+        options:
+          - "Club News"
+          - "Match Reports"
+          - "Announcements"
+          - "Training"
+          - "Events"
+          - "Junior"
+      - { label: "Excerpt",       name: "excerpt", widget: "text",   required: false, hint: "Short summary shown on the news listing page." }
+      - { label: "Featured Image", name: "image",  widget: "image",  required: false }
+      - { label: "Draft (hide from site)", name: "draft", widget: "boolean", default: false }
+      - { label: "Body",          name: "body",    widget: "markdown" }
+
+  # Pages — editors can update About and Programs page content
+  - name: "pages"
+    label: "Pages"
+    files:
+      - label: "About Us"
+        name: "about"
+        file: "src/content/pages/about.md"
+        fields:
+          - { label: "Title", name: "title", widget: "string" }
+          - { label: "Body",  name: "body",  widget: "markdown" }
+
+      - label: "Programs"
+        name: "programs"
+        file: "src/content/pages/programs.md"
+        fields:
+          - { label: "Title", name: "title", widget: "string" }
+          - { label: "Body",  name: "body",  widget: "markdown" }

@@ -1,0 +1,54 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const allNews = await getCollection('news', ({ data }) => !data.draft);
+const posts   = allNews.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+const formatDate = (d: Date) =>
+  d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+---
+<BaseLayout title="News" description="Latest news from the Gracemere Redbacks Soccer Club.">
+
+  <section class="page-hero">
+    <div class="container">
+      <h1>Club News</h1>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a> <span>/</span> <span>News</span>
+      </nav>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      {posts.length === 0 ? (
+        <p style="text-align:center;color:var(--color-text-muted);padding:3rem 0">
+          No news posts yet. Check back soon!
+        </p>
+      ) : (
+        <div class="post-grid">
+          {posts.map(post => (
+            <article class="post-card">
+              <div class="post-card-thumb">
+                {post.data.image
+                  ? <img src={post.data.image} alt={post.data.title} loading="lazy" />
+                  : <div class="post-card-thumb-placeholder">⚽</div>
+                }
+              </div>
+              <div class="post-card-body">
+                <p class="post-card-meta">
+                  <span class="category-tag">{post.data.category}</span>
+                  {formatDate(post.data.date)}
+                </p>
+                <h3><a href={`/news/${post.slug}`}>{post.data.title}</a></h3>
+                {post.data.excerpt && <p>{post.data.excerpt}</p>}
+                <a href={`/news/${post.slug}`} class="btn btn-outline-dark" style="align-self:flex-start;font-size:0.85rem;padding:0.5rem 1rem">Read More</a>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+
+</BaseLayout>

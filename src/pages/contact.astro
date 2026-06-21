@@ -1,0 +1,137 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// ── ACTION: Replace YOUR_FORMSPREE_ID below ──────────────────
+// 1. Go to https://formspree.io and create a free account
+// 2. Click "New Form", name it "Redbacks Contact"
+// 3. Copy the form ID (looks like: xpwzabcd)
+// 4. Replace YOUR_FORMSPREE_ID with it
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/YOUR_FORMSPREE_ID';
+---
+<BaseLayout title="Contact" description="Contact the Gracemere Redbacks Soccer Club. We'd love to hear from you.">
+
+  <section class="page-hero">
+    <div class="container">
+      <h1>Contact Us</h1>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a> <span>/</span> <span>Contact</span>
+      </nav>
+    </div>
+  </section>
+
+  <section class="section section--dark">
+    <div class="container">
+      <div class="contact-wrapper">
+
+        <!-- Left: contact details -->
+        <div>
+          <div class="section-heading">
+            <h2>Get in Touch</h2>
+          </div>
+          <p style="color:rgba(255,255,255,0.8);margin-bottom:2rem">
+            Have a question about registrations, training times, or anything else? Fill in the form and we'll get back to you as soon as we can.
+          </p>
+
+          <div class="contact-detail">
+            <div class="contact-detail-icon">📍</div>
+            <div class="contact-detail-text">
+              <strong>Ground</strong>
+              <span>Gracemere, QLD, Australia</span>
+            </div>
+          </div>
+
+          <div class="contact-detail">
+            <div class="contact-detail-icon">📧</div>
+            <div class="contact-detail-text">
+              <strong>Email</strong>
+              <!-- Replace with your actual club email -->
+              <span><a href="mailto:info@gracemereredbacks.com.au" style="color:var(--color-primary-light)">info@gracemereredbacks.com.au</a></span>
+            </div>
+          </div>
+
+          <div class="contact-detail">
+            <div class="contact-detail-icon">📘</div>
+            <div class="contact-detail-text">
+              <strong>Facebook</strong>
+              <!-- Replace with your actual Facebook page URL -->
+              <span><a href="https://facebook.com/gracemereredbacks" target="_blank" rel="noopener" style="color:var(--color-primary-light)">Gracemere Redbacks</a></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: contact form (Formspree) -->
+        <div class="contact-form-wrap">
+          <h3>Send Us a Message</h3>
+
+          <form
+            id="contact-form"
+            action={FORMSPREE_ENDPOINT}
+            method="POST"
+          >
+            <!-- Redirect after submission -->
+            <input type="hidden" name="_next" value="/contact?sent=1" />
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="first-name">First Name <span class="required">*</span></label>
+                <input type="text" id="first-name" name="first_name" required />
+              </div>
+              <div class="form-group">
+                <label for="last-name">Last Name <span class="required">*</span></label>
+                <input type="text" id="last-name" name="last_name" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email <span class="required">*</span></label>
+              <input type="email" id="email" name="email" required />
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Phone</label>
+              <input type="tel" id="phone" name="phone" />
+            </div>
+
+            <div class="form-group">
+              <label for="subject">Subject <span class="required">*</span></label>
+              <select id="subject" name="subject" required>
+                <option value="">— Please select —</option>
+                <option>Registration Enquiry</option>
+                <option>Training Times</option>
+                <option>Junior Development</option>
+                <option>Sponsorship / Partnership</option>
+                <option>Volunteering</option>
+                <option>General Enquiry</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="message">Message <span class="required">*</span></label>
+              <textarea id="message" name="message" required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width:100%">Send Message</button>
+            <p class="form-note">We aim to respond within 2 business days.</p>
+          </form>
+
+          <!-- Success message shown after redirect with ?sent=1 -->
+          <div id="form-success" style="display:none;background:var(--color-off-white);border-left:4px solid var(--color-primary);padding:1.25rem;border-radius:0 var(--radius) var(--radius) 0;margin-top:1rem">
+            <strong>Message sent!</strong> Thanks for getting in touch — we'll be in touch shortly.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</BaseLayout>
+
+<script>
+  // Show success banner if redirected back with ?sent=1
+  if (new URLSearchParams(window.location.search).get('sent') === '1') {
+    const form = document.getElementById('contact-form');
+    const msg  = document.getElementById('form-success');
+    if (form) form.style.display = 'none';
+    if (msg)  msg.style.display  = 'block';
+  }
+</script>
