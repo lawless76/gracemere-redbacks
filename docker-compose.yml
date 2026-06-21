@@ -15,4 +15,4 @@ services:
     image: ghcr.io/lawless76/gracemere-redbacks:latest
     restart: unless-stopped
     ports:
-      - "5000:80"
+      - "5200:80"
