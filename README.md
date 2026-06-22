@@ -1,4 +1,4 @@
-# Gracemere Redbacks Soccer Club — Website
+# Gracemere Redbacks Football Club — Website
 
 Astro-powered static site with Decap CMS for content editing, served by Nginx in Docker, deployed via GitHub Actions to Dockge on TrueNAS.
 
@@ -11,7 +11,7 @@ Astro-powered static site with Decap CMS for content editing, served by Nginx in
 | Contact form | [Formspree](https://formspree.io) (free tier) |
 | Container | Docker / Nginx |
 | CI/CD | GitHub Actions → ghcr.io |
-| Deployment | Dockge on TrueNAS (`http://10.0.1.252:5000`) |
+| Deployment | Dockge on TrueNAS (`http://10.0.1.252:5200`) |
 
 ---
 
@@ -42,8 +42,8 @@ Go to [github.com/settings/developers](https://github.com/settings/developers) �
 | Field | Value |
 |---|---|
 | Application name | Gracemere Redbacks CMS |
-| Homepage URL | `http://10.0.1.252:5000` |
-| Authorization callback URL | `http://10.0.1.252:5000/admin/` |
+| Homepage URL | `http://10.0.1.252:5200` |
+| Authorization callback URL | `http://10.0.1.252:5200/admin/` |
 
 Click **Register application**, then copy the **Client ID**.
 
@@ -75,18 +75,18 @@ Edit content in /admin  →  Decap commits to GitHub
           OR
 Edit code locally       →  git push origin main
                                ↓
-                   GitHub Actions: npm ci → npm run build → Docker build → push to ghcr.io
+                   GitHub Actions: npm install → npm run build → Docker build → push to ghcr.io
                                ↓
                    In Dockge: Pull → Restart
                                ↓
-                   Site live at http://10.0.1.252:5000
+                   Site live at http://10.0.1.252:5200
 ```
 
 ---
 
 ## Content Editing (Decap CMS)
 
-Editors visit `http://10.0.1.252:5000/admin/` and log in with GitHub.
+Editors visit `http://10.0.1.252:5200/admin/` and log in with GitHub.
 
 | What to edit | Where in the CMS |
 |---|---|
@@ -94,7 +94,13 @@ Editors visit `http://10.0.1.252:5000/admin/` and log in with GitHub.
 | About Us page content | **Pages → About Us** |
 | Programs page content | **Pages → Programs** |
 
-Home page hero text, contact details, and footer links are in the source files and require a code edit + push.
+The following require a code edit + push:
+
+- Home page hero text and stats strip numbers
+- Announcement bar message
+- Social media URLs (in `Header.astro` and `Footer.astro`)
+- Sponsor logos (in `src/pages/index.astro`)
+- Contact details and footer links
 
 ---
 
@@ -108,33 +114,52 @@ src/
       about.md      ← About page content (managed by Decap CMS)
       programs.md   ← Programs page content (managed by Decap CMS)
   layouts/
-    BaseLayout.astro
+    BaseLayout.astro  ← HTML shell, announcement bar, fonts, favicon
   components/
-    Header.astro
-    Footer.astro
+    Header.astro      ← Logo, nav, social icons
+    Footer.astro      ← Logo, links, social icons
   pages/
-    index.astro     ← Home page
+    index.astro       ← Home page (hero, stats, feature cards, reg cards, news, sponsors, CTA)
     about.astro
     programs.astro
     contact.astro
     news/
-      index.astro   ← News listing
-      [slug].astro  ← Individual news post
+      index.astro     ← News listing
+      [slug].astro    ← Individual news post
   styles/
-    global.css
+    global.css        ← All site styles and CSS variables
 public/
   admin/
-    index.html      ← Decap CMS loader
-    config.yml      ← Decap CMS configuration
-  uploads/          ← Images uploaded via CMS
+    index.html        ← Decap CMS loader
+    config.yml        ← Decap CMS configuration
+  uploads/            ← Images uploaded via CMS
+  gracemere-redbacks-logo-banner.png  ← Club logo (header + footer)
+  favicon.png         ← Browser tab icon
 ```
+
+---
+
+## Customisation Quick Reference
+
+| Task | Where |
+|---|---|
+| Change brand colours | CSS variables at top of `src/styles/global.css` |
+| Change fonts | CSS variables + Google Fonts link in `src/layouts/BaseLayout.astro` |
+| Update announcement bar | `src/layouts/BaseLayout.astro` |
+| Update social media URLs | `src/components/Header.astro` and `Footer.astro` |
+| Add a hero background photo | Add `style="--hero-bg:url('/uploads/hero.jpg')"` to the `<section class="hero">` in `src/pages/index.astro` |
+| Update stats strip numbers | `src/pages/index.astro` — Stats Strip section |
+| Add sponsor logos | Replace `<div class="sponsor-logo-slot">` with `<img>` tags in `src/pages/index.astro` |
+| Add a new page | Create `.astro` file in `src/pages/`, add link in `src/components/Header.astro` |
+| Replace the logo | Swap out `public/gracemere-redbacks-logo-banner.png` |
+| Replace the favicon | Swap out `public/favicon.png` |
 
 ---
 
 ## FAQ
 
 **Decap CMS says "Unable to authenticate"**
-Check the GitHub OAuth App callback URL is exactly `http://10.0.1.252:5000/admin/` (with trailing slash), and that the Client ID in `public/admin/config.yml` is correct.
+Check the GitHub OAuth App callback URL is exactly `http://10.0.1.252:5200/admin/` (with trailing slash), and that the Client ID in `public/admin/config.yml` is correct.
 
 **I pushed code but the site hasn't updated**
 Go to Dockge, open the `gracemere-redbacks` stack, click **Pull** then **Restart**.
@@ -147,3 +172,6 @@ Create a new `.astro` file in `src/pages/` and add the nav link in `src/componen
 
 **How do I change the site colours or fonts?**
 Edit the CSS variables at the top of `src/styles/global.css`.
+
+**Nav links are loading the TrueNAS dashboard instead of site pages**
+This was caused by Nginx issuing absolute redirects that lost the Docker port mapping. The fix is already in place in `nginx.conf` (`absolute_redirect off` and `port_in_redirect off`). If it recurs, make sure those lines are present.

@@ -1,143 +1,175 @@
 # Change Guide — Gracemere Redbacks Website
 
-This document explains every architectural and design decision made when building this project. It will be updated as the site evolves.
+A record of every major decision made when building and evolving this project.
 
 ---
 
-## Version 1.0.0 — Initial Build
+## Version 2.0.0 — Migration from WordPress to Astro
 
-### Why WordPress?
+### Why migrate from WordPress to Astro?
 
-WordPress was chosen because:
-- Content editors (non-developers) can update pages by pasting from Word — no code skills needed
-- The WordPress block editor (Gutenberg) preserves Word formatting (headings, bold, bullet points, tables) on paste
-- It has a massive ecosystem of free plugins if new features are needed later (e.g. event calendars, photo galleries, registration forms)
-- It runs reliably in Docker with the official `wordpress` image
-- It is the world's most-used CMS, so support and documentation are easy to find
+The original WordPress build worked but came with operational complexity:
+- Required two Docker containers (WordPress + MySQL) running at all times
+- Required a database backup strategy to avoid losing content
+- WordPress core and plugin updates needed regular attention
+- The Docker image was large (~500MB+)
 
----
-
-### Why Docker + Dockge?
-
-The site runs in Docker so:
-- The entire environment (WordPress + database) is reproducible — no "works on my machine" problems
-- Updates are deployed by simply pulling a new image, not by manually copying files
-- Dockge provides a simple web UI to manage the stack without needing to SSH and run commands
-
-The stack has two containers:
-- **wordpress** — the custom-built image with the theme baked in
-- **db** — MySQL 8 database
+Astro solves all of these because:
+- The site is **pre-built to static HTML** — no PHP, no database, no runtime server
+- The Docker image is tiny (just Nginx serving flat files)
+- Content lives in **Markdown files in the Git repository** — versioned, backed up, no database needed
+- Builds are fast and the deployed site is extremely fast to load
 
 ---
 
-### Why GitHub Actions?
+### Why Decap CMS?
 
-GitHub Actions automatically builds a new Docker image every time you push to the `main` branch. This means:
-- You only need to push your code — the build happens in the cloud for free
-- The image is stored in GitHub Container Registry (`ghcr.io`) — also free
-- You don't need Docker installed on your local machine to deploy
-
-The workflow (`.github/workflows/deploy.yml`) uses GitHub's own `GITHUB_TOKEN` secret — no manual credentials to manage.
+Content editors still need a web UI — they shouldn't have to edit Markdown files directly in GitHub. Decap CMS provides:
+- A web UI at `/admin` that looks and works like a traditional CMS
+- GitHub OAuth login — no separate user accounts to manage
+- Edits are committed to the Git repo automatically, which triggers a rebuild
+- No server required — it communicates directly with the GitHub API from the browser
 
 ---
 
-### Why a custom WordPress theme (not an off-the-shelf theme)?
+### Why Formspree for the contact form?
 
-An off-the-shelf theme would require:
-- Finding a theme that matches the club branding
-- Installing and configuring a page-builder plugin
-- Managing theme updates that could break customisations
+A static site can't run server-side PHP to send emails. Options considered:
+- **Formspree (chosen)** — free tier, simple, no backend needed, submissions emailed directly
+- Netlify Forms — only works on Netlify hosting
+- Self-hosted email handler — adds complexity and a server requirement
 
-A custom theme means:
-- Full control over the design and colours
-- No page-builder bloat or licensing fees
-- Easy to maintain — one developer can understand the entire codebase
-- Colours are defined as CSS variables at the top of `style.css`, so a rebrand is a one-line change
+Formspree requires only a single endpoint URL in the form's `action` attribute.
+
+---
+
+### Why Nginx over other static file servers?
+
+Nginx was already in use and is the industry standard for serving static files. Key configuration decisions:
+
+- `absolute_redirect off` and `port_in_redirect off` — critical when Docker maps a non-standard external port (5200) to Nginx's internal port 80. Without these, Nginx strips the port from redirects, causing browsers to land on TrueNAS (which runs on port 80).
+- `try_files $uri $uri/index.html $uri.html` — serves Astro's pre-rendered HTML without triggering directory redirects.
+
+---
+
+### Why is Astro built in GitHub Actions, not in the Dockerfile?
+
+Building Astro inside the Dockerfile would require Node.js in the image, making it large and slow to build. Instead:
+- GitHub Actions runs `npm install` and `npm run build` to produce the `dist/` folder
+- The Dockerfile is a single-stage build: just copy `dist/` into `nginx:alpine`
+- The final image is small and fast
 
 ---
 
 ### Colour Scheme
 
-Extracted directly from the club logo:
+Extracted from the club logo — unchanged from v1.0.0:
 
 | Variable | Hex | Use |
 |---|---|---|
 | `--color-primary` | `#7A2535` | Buttons, accents, nav hover, category tags |
-| `--color-primary-dark` | `#5C1A28` | Button hover states |
+| `--color-primary-dark` | `#5C1A28` | Button hover, announcement bar |
 | `--color-primary-light` | `#9B3545` | Footer links, hero subtext |
-| `--color-dark` | `#0D0D0D` | Header, hero, dark sections |
-| `--color-white` | `#FFFFFF` | Background, card backgrounds |
+| `--color-dark` | `#0D0D0D` | Header, footer, hero, dark sections |
+| `--color-white` | `#FFFFFF` | Page background, card backgrounds |
 
-To change any colour globally, update the value in `wp-content/themes/redbacks/style.css` under `:root { }`.
-
----
-
-### Contact Form — Why not a plugin?
-
-The contact form is built into the theme (no plugin required) because:
-- Fewer plugins = fewer security vulnerabilities and update headaches
-- The form submits via AJAX (no page reload) for a better user experience
-- The PHP handler in `functions.php` emails submissions to the WordPress admin email
-- It's easy to read and modify — all in one place
-
-How it works:
-1. User fills in the form on `/contact`
-2. JavaScript (`theme.js`) intercepts the submit event and sends data to WordPress AJAX (`/wp-admin/admin-ajax.php`)
-3. WordPress validates the data and sends an email using `wp_mail()`
-4. A success or error message is shown on the page
-
-To change where form submissions go: **WordPress Admin → Settings → General → Administration Email Address**
+To change any colour globally, update the value in `src/styles/global.css` under `:root { }`.
 
 ---
 
-### Placeholder Logo
+### Fonts
 
-The current theme uses a ⚽ emoji as a placeholder logo. To replace it:
-1. Go to **WordPress Admin → Appearance → Customize → Site Identity**
-2. Upload the real logo PNG (recommend transparent background, at least 200px tall)
-3. Click Publish
-
-The `header.php` file checks `has_custom_logo()` — if a logo is set via the Customizer, it shows that image; otherwise it falls back to the emoji placeholder.
+- **Oswald** (Google Fonts) — headings, nav, buttons. Bold and athletic — suits a sports club.
+- **Open Sans** (Google Fonts) — body text. Clean and readable at all sizes.
 
 ---
 
-### Media Uploads and Docker Volumes
+### Home Page Sections
 
-WordPress media uploads (photos, PDFs, etc.) are stored in a Docker **named volume** (`wp_uploads`), not inside the container image. This means:
-- Uploaded files survive image updates and container restarts
-- You never need to re-upload images when deploying a new version of the site
-- The volume is managed by Docker — it persists until explicitly deleted
+The home page was designed by referencing local Brisbane soccer club sites. Sections in order:
 
-The theme files (CSS, PHP, JS) ARE baked into the image so they update automatically on redeploy.
-
----
-
-### WordPress Database
-
-The MySQL database is also stored in a Docker named volume (`db_data`). This means:
-- All page content, posts, settings, and user accounts persist across restarts
-- The database is not in Git (it shouldn't be — it contains passwords and private data)
-- To back up: use a WordPress backup plugin (e.g. UpdraftPlus) or `mysqldump`
+1. **Announcement bar** — slim maroon strip above the nav on every page. Update the text in `src/layouts/BaseLayout.astro`.
+2. **Hero** — dark background with maroon gradient overlay. Supports a real background photo via the `--hero-bg` CSS variable.
+3. **Stats strip** — maroon band with 4 club statistics. Update the numbers in `src/pages/index.astro`.
+4. **Feature cards** — 4 cards explaining why to join the club.
+5. **Registration cards** — dark section with clickable cards per team type, linking to the programs page.
+6. **About strip** — brief club description with a link to the About page.
+7. **Latest news** — automatically shows the 3 most recent non-draft news posts.
+8. **Sponsor strip** — placeholder logo row. Replace the placeholder divs with `<img>` tags when sponsors are confirmed.
+9. **CTA banner** — maroon call-to-action linking to Programs and Contact.
 
 ---
 
-### Security Decisions
+### Logo and Favicon
 
-- Passwords are stored in `.env` (not committed to Git — see `.gitignore`)
-- Contact form submissions are validated server-side and use a WordPress nonce to prevent CSRF attacks
-- User input is sanitised with WordPress functions (`sanitize_text_field`, `sanitize_email`, etc.) before use
-- `.env.example` is committed as a template — it contains no real secrets
+- Logo file: `public/gracemere-redbacks-logo-banner.png` — displayed at 120px height in both header and footer.
+- Favicon: `public/favicon.png` — referenced in `src/layouts/BaseLayout.astro`.
+- To update either, replace the file in `public/` and push.
+
+---
+
+### Social Media
+
+Facebook and Instagram icon links appear in:
+- The header (desktop only — hidden on mobile to save space)
+- The footer (always visible)
+
+Update the URLs in `src/components/Header.astro` and `src/components/Footer.astro`.
+
+---
+
+### Hero Background Photo
+
+The hero currently uses a dark colour + maroon gradient. To add a real action photo:
+
+1. Upload the photo via Decap CMS (it will land in `public/uploads/`)
+2. In `src/pages/index.astro`, add a `style` attribute to the hero section:
+
+```html
+<section class="hero" style="--hero-bg:url('/uploads/your-photo.jpg')">
+```
+
+The existing gradient overlay will keep the text readable regardless of the photo.
+
+---
+
+### Deployment Port
+
+The site runs on port **5200** externally (Docker maps `5200 → 80` inside the container). All OAuth callback URLs and internal links should use port 5200.
+
+---
+
+## Version 1.0.0 — Original WordPress Build
+
+### Why WordPress?
+
+WordPress was chosen because:
+- Content editors (non-developers) can update pages by pasting from Word — no code skills needed
+- The WordPress block editor (Gutenberg) preserves Word formatting on paste
+- It has a large ecosystem of plugins for future features
+- It runs reliably in Docker with the official `wordpress` image
+
+### Why a custom WordPress theme?
+
+An off-the-shelf theme would require page-builder plugins and ongoing update management. A custom theme gave full control over design with no bloat.
+
+### Why Docker + Dockge?
+
+The entire environment was reproducible and deployable without SSH. Dockge provided a simple web UI for stack management.
+
+The stack had two containers:
+- **wordpress** — custom-built image with the theme baked in
+- **db** — MySQL 8 database
+
+Both were replaced in v2.0.0 by a single Nginx container serving pre-built static files.
 
 ---
 
 ## Planned Future Changes
 
-These are things that could be added when needed:
-
-- **Custom logo** — replace the emoji placeholder once the final logo file is provided
-- **Social media links** — add Facebook/Instagram icons to the footer
-- **Events/fixtures page** — could use a free plugin like "The Events Calendar" or a custom post type
-- **Sponsor logos** — a sponsor grid section on the homepage
-- **Online registration form** — could link to an external platform (e.g. PlayFootball) or use a form plugin
-- **SSL/HTTPS** — when the site goes to a public domain, add an SSL certificate via Nginx reverse proxy + Let's Encrypt
-- **Custom domain** — update `SITE_URL` in `.env` and DNS records when a domain is registered
+- **Hero photo** — add a real action photo to the hero section once available
+- **Sponsor logos** — replace placeholder boxes with real sponsor images
+- **Events/fixtures page** — a page showing the season schedule
+- **Online registration link** — link the registration cards to an external platform (e.g. PlayFootball / Squadi)
+- **SSL/HTTPS** — add a certificate via Nginx reverse proxy + Let's Encrypt when a public domain is registered
+- **Custom domain** — update the Decap CMS OAuth App URLs and `docker-compose.yml` when a domain is set up
